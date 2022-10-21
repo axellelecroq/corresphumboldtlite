@@ -15,6 +15,99 @@ from .widgets import createDropdown, createButton, createCheckBox
 data = getJSON('data/records.json')
 out = Output()
 
+def allonmap(data, by: str):
+    cities = {}
+    marker = None
+    coordinates = []
+    m= Map(
+            #center=(52.204793, 360.121558),
+            zoom=1.5,
+            layout=Layout(width='80%', height='500px'),
+            close_popup_on_click=False
+            )
+    
+    for i in data:
+            try :
+                if i[by]["address"] not in cities:
+                    city = i[by]["address"]
+                    cities[city] = {}
+                    cities[city]["message"] = "<b>"+ i["date"] + " </b> " + i["title"] + "<br><i>"+ i["contributor"] +"</i> <br> <a href=\""+ i["identifier"][1] + "\" target=\"_blank\">online</a> <hr>"
+                    cities[city]["coordinates"] = [i[by]["coordinates"][1], i[by]["coordinates"][0]]
+                    
+                elif i[by]["address"] in cities:
+                    city = i[by]["address"]
+                    cities[city]["message"] = cities[city]["message"] + "<b>"+ i["date"] + " </b> " + i["title"] + "<br><i>"+ i["contributor"]  + "</i><br> <a href=\""+ i["identifier"][1] + "\" target=\"_blank\">online</a> <hr>"
+            except : pass
+            
+    # Coordinates to create a dynamic map boundaries
+    try:
+        for i in cities.keys():
+            if type(cities[i]["coordinates"][0]) == float and type(cities[i]["coordinates"][1]) == float:
+                coordinates.append([float(cities[i]["coordinates"][0]), float(cities[i]["coordinates"][1])])
+            elif type(cities[i]["coordinates"][0]) == str and type(cities[i]["coordinates"][1]) == str:
+                coordinates.append([float(cities[i]["coordinates"][0]), float(cities[i]["coordinates"][1])])
+    
+        coordinates = numpy.array(coordinates)
+        data_frame = pd.DataFrame(coordinates, columns=['Lat', 'Long'])
+        sw = data_frame[['Lat', 'Long']].min().values.tolist()
+        ne = data_frame[['Lat', 'Long']].max().values.tolist()
+        m.fit_bounds([sw, ne])
+    except: pass
+
+
+    # Mapmarker and popup message
+    for i in cities.keys():
+            try :
+                # Create the message of the popup
+                message = HTML()
+                if cities[i]["message"].count("<hr>") <3 :
+                    message.value = cities[i]["message"]
+                else : 
+                    message.value = str(cities[i]["message"].count("<hr>")) + " letters. There are too many results to show them all here."
+                message.description = i.upper()
+
+                # Create the marker
+                marker = CircleMarker(location=(cities[i]["coordinates"][0], cities[i]["coordinates"][1]))
+                radius = cities[i]["message"].count("<hr>")+3
+                if radius > 10:
+                    radius = 12
+                marker.radius = radius
+                marker.fill_opacity = 0.8
+                marker.fill_color = "#2A7299"
+                marker.stroke = False
+
+                # Add marker on the map
+                m.add_layer(marker)
+                marker.popup = message
+            except: pass
+    display(m)
+    
+
+def map_by_date():
+    
+    def on_value_change(change):
+        output_bydate.clear_output(wait=True)
+        display(Javascript('IPython.notebook.execute_cell()'))
+        results = []
+        with output_bydate:
+            for i in data:
+
+                try:
+                    if i["date"]:
+                        if change['new'] in i["date"]:
+                            results.append(i)
+                except: pass
+            allonmap(results, 'coverage_location')
+
+    dropdown = createDropdown('', getHumboldtYears(getYears(avoidTupleInList(nested_lookup('date', data)))))
+    output_bydate = widgets.Output()
+    display(dropdown, output_bydate)
+    dropdown.observe(on_value_change, names='value')
+    
+    
+##### old functions ###
+
+
 
 def create_histogramm(data, person):
     """
