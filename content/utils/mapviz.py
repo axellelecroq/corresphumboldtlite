@@ -103,7 +103,54 @@ def map_by_date():
     output_bydate = widgets.Output()
     display(dropdown, output_bydate)
     dropdown.observe(on_value_change, names='value')
+
+def byperson():
+    # Get the letters which have a recorded date
+    with_date= []
+    for i in data:
+        try:
+            if bool(i['date']) == True:
+                with_date.append(i)
+        except:pass
+        
+    # Get all people who received or sent a letter    
+    creators = avoidTupleInList(nested_lookup('creator', with_date))
+    subjects = avoidTupleInList(nested_lookup('subject', with_date))
+    people = []
     
+    # Delete Humboldt from creators' and subjects' lists
+    for i in creators:
+        if '[' in i :
+            i = i.split(' [vermutlich]')[0]
+        if 'Humboldt' not in i:
+            people.append(i)
+    for i in subjects:
+        if 'Humboldt' not in i and i not in people:
+            people.append(i)
+
+    #Create dropdown Menu
+    dropdown = createDropdown('', people)
+    return dropdown 
+
+def map_by_person():
+    
+    def on_value_change(change):
+        output_bydate.clear_output(wait=True)
+        display(Javascript('IPython.notebook.execute_cell()'))
+        results = []
+        with output_bydate:
+            person = change['new']
+            for i in data:
+                try : 
+                    if person in i["creator"] or person in i["subject"]:
+                        results.append(i)
+                except: pass
+            allonmap(results, 'coverage_location')
+
+    dropdown = byperson()
+    output_bydate = widgets.Output()
+    display(dropdown, output_bydate)
+    dropdown.observe(on_value_change, names='value')
     
 ##### old functions ###
 
