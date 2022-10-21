@@ -3,7 +3,7 @@ import numpy
 import random
 import IPython
 from IPython.display import display, clear_output
-from ipywidgets import HTML, Output, HBox
+from ipywidgets import HTML, Output, HBox, Layout
 from ipyleaflet import Map, Marker, Popup, CircleMarker
 import matplotlib.pyplot as plt
 
@@ -22,7 +22,7 @@ def allonmap(data, by: str):
     m= Map(
             #center=(52.204793, 360.121558),
             zoom=1.5,
-            layout=Layout(width='80%', height='500px'),
+            layout=Layout(width='auto'),
             close_popup_on_click=False
             )
     
@@ -151,6 +151,88 @@ def map_by_person():
     output_bydate = widgets.Output()
     display(dropdown, output_bydate)
     dropdown.observe(on_value_change, names='value')
+
+def createhistogramm(data, person):
+    """
+    Create a histogramm of the exchange of letters
+    between AvH and a selected person during the time.
+    :param data: List of letters
+    :param person: Selected person 
+    """
+    title = 'Correspondence between AvH(1769-1859) und ' + person
+    x_coords = [coord[0] for coord in data]
+    fig= plt.figure(figsize=(7,2))
+    plt.hist(x_coords, bins=30)
+    fig.suptitle(title, fontsize=12)
+    plt.xlabel('Year', fontsize=12)
+    plt.ylabel('Number of letters', fontsize=12)
+    
+    return plt.show()
+    
+
+def byperson():
+    # Get the letters which have a recorded date
+    with_date= []
+    for i in data:
+        try:
+            if bool(i['date']) == True:
+                with_date.append(i)
+        except:pass
+        
+    # Get all people who received or sent a letter    
+    creators = avoidTupleInList(nested_lookup('creator', with_date))
+    subjects = avoidTupleInList(nested_lookup('subject', with_date))
+    people = []
+    
+    # Delete Humboldt from creators' and subjects' lists
+    for i in creators:
+        if '[' in i :
+            i = i.split(' [vermutlich]')[0]
+        if 'Humboldt' not in i:
+            people.append(i)
+    for i in subjects:
+        if 'Humboldt' not in i and i not in people:
+            people.append(i)
+
+    #Create dropdown Menu
+    dropdown = createDropdown('', people)
+    return dropdown 
+
+def histogramm_by_person():
+    
+    def on_value_change(change):
+        output_bydate.clear_output(wait=True)
+        display(Javascript('IPython.notebook.execute_cell()'))
+        results = []
+        liste = []
+        with output_bydate:
+            person = change['new']
+            for i in data:
+                try : 
+                    if person in i["creator"] or person in i["subject"]:
+                        results.append(i)
+                except: pass     
+            
+            for i in results:
+                try :
+                    if int(i['date'][:4]) <1859:
+                        liste.append((int(i['date'][:4]), int(1)))
+                except:pass
+            
+            
+            print('Number of letters: {0}'.format(len(results)))
+            print('Letters with date: {0}'.format(len(liste)))
+            print('Letters without date: {0}'.format(len(results)-len(liste)))      
+            
+            if len(liste) > 1:
+                HBox([createhistogramm(liste, person), allonmap_def(results, 'coverage_location')])
+            else:
+                allonmap_def(results, 'coverage_location')
+    dropdown = byperson()
+    output_bydate = widgets.Output()
+    display(dropdown, output_bydate)
+    dropdown.observe(on_value_change, names='value')
+
     
 ##### old functions ###
 
