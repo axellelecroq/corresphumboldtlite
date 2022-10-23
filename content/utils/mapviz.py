@@ -2,10 +2,11 @@ import pandas as pd
 import numpy
 import random
 import IPython
-from IPython.display import display, clear_output
+from IPython.display import display, clear_output, Javascript
 from ipywidgets import HTML, Output, HBox, Layout
 from ipyleaflet import Map, Marker, Popup, CircleMarker
 import matplotlib.pyplot as plt
+import ipywidgets as widgets
 
 from .nestedlookup import *
 from .search_dynamic import show_webpage,btn_new_search
@@ -20,7 +21,6 @@ def allonmap(data, by: str):
     marker = None
     coordinates = []
     m= Map(
-            #center=(52.204793, 360.121558),
             zoom=1.5,
             layout=Layout(width='auto'),
             close_popup_on_click=False
@@ -103,7 +103,7 @@ def map_by_date():
     output_bydate = widgets.Output()
     display(dropdown, output_bydate)
     dropdown.observe(on_value_change, names='value')
-
+    
 def byperson():
     # Get the letters which have a recorded date
     with_date= []
@@ -225,14 +225,56 @@ def histogramm_by_person():
             print('Letters without date: {0}'.format(len(results)-len(liste)))      
             
             if len(liste) > 1:
-                HBox([createhistogramm(liste, person), allonmap_def(results, 'coverage_location')])
+                HBox([createhistogramm(liste, person), allonmap(results, 'coverage_location')])
             else:
-                allonmap_def(results, 'coverage_location')
+                allonmap(results, 'coverage_location')
     dropdown = byperson()
     output_bydate = widgets.Output()
     display(dropdown, output_bydate)
     dropdown.observe(on_value_change, names='value')
 
+
+
+def sorted_by_period(data:list):
+    by_period = {'1792-1796: Deutschland' : [], '1797-1804: Amerika': [] , '1805: Berlin': [], '1806-1828: Paris':[] ,'1829: Russland': [] ,'1830-1859: Berlin':[]}
+    
+    for i in data:
+        try :
+            date = int(i['date'][:4])
+            if date > 1792 and date < 1796:
+                by_period['1792-1796: Deutschland'].append(i)
+            elif date > 1799 and date < 1804:
+                by_period['1797-1804: Amerika'].append(i)
+            elif date == 1805:
+                by_period['1805: Berlin'].append(i)
+            elif date > 1806 and date < 1828:
+                by_period['1806-1828: Paris'].append(i)
+            elif date == 1829:
+                by_period['1829: Russland'].append(i)
+            elif date > 1830 and date < 1859:
+                by_period['1830-1859: Berlin'].append(i)
+        except: pass
+
+    return by_period
+
+def mapByPeriod():
+    btn = widgets.ToggleButtons(
+                options= sorted_by_period(data),
+                description='',
+                disabled=False,
+                button_style='',
+                )
+
+    def onchange(change):
+        output.clear_output(wait=True)
+        display(Javascript('IPython.notebook.execute_cell()'))
+        with output:
+             display(allonmap(change['new'], 'coverage_location'))
+
+
+    output = widgets.Output()
+    display(btn, output)
+    btn.observe(onchange, 'value')
     
 ##### old functions ###
 
@@ -661,69 +703,50 @@ def all_on_map(data, by: str):
 
 
 def sorted_by_period(data:list):
-    by_period = {'1830-1859':[], '1829': [], '1806-1828':[], '1805': [], '1799-1804': [], '1792-1798' : []}
-
+    by_period = {'1792-1796: Deutschland' : [], '1797-1804: Amerika': [] , '1805: Berlin': [], '1806-1828: Paris':[] ,'1829: Russland': [] ,'1830-1859: Berlin':[]}
+    
     for i in data:
         try :
             date = int(i['date'][:4])
             if date > 1792 and date < 1796:
-                by_period['1792-1798'].append(i)
+                by_period['1792-1796: Deutschland'].append(i)
             elif date > 1799 and date < 1804:
-                by_period['1799-1804'].append(i)
+                by_period['1797-1804: Amerika'].append(i)
             elif date == 1805:
-                by_period['1805'].append(i)
+                by_period['1805: Berlin'].append(i)
             elif date > 1806 and date < 1828:
-                by_period['1806-1828'].append(i)
+                by_period['1806-1828: Paris'].append(i)
             elif date == 1829:
-                by_period['1829'].append(i)
+                by_period['1829: Russland'].append(i)
             elif date > 1830 and date < 1859:
-                by_period['1830-1859'].append(i)
+                by_period['1830-1859: Berlin'].append(i)
         except: pass
 
     return by_period
 
-
-def map_by_period(data, by: str):
+def mapByPeriod():
     """
     Show all letters of AvH's correspondence with different color for different period of his life.
     There are in total 6 periods represented on the map
     :param data: List of letters
     :param by: what should be on the map represented ? 'coverage_location' or 'contributor_location' ? 
     """
-    marker = None
-    colors = []
-    m = Map(
-            center=(10, -2),
-            zoom=1.5,
-            close_popup_on_click=False
-            )
+    btn = widgets.ToggleButtons(
+                options= sorted_by_period(data),
+                description='',
+                disabled=False,
+                button_style='',
+                )
 
-    # Mapmarker and popup message
-    for x in data:
-        color = "%06x" % random.randint(0, 0xFFFFFF)
-        color ='#'+ color
-        colors.append(color)
-        
-        for i in data[x]:
-            try :
-                # Create the message of the popup
-                message = HTML()
-                message.value = i["coverage"]
+    def onchange(change):
+        output.clear_output(wait=True)
+        display(Javascript('IPython.notebook.execute_cell()'))
+        with output:
+             allonmap(change['new'], 'coverage_location')
 
-                # Create the marker
-                marker = CircleMarker(location=(i['coverage_location']['coordinates'][1],i['coverage_location']['coordinates'][0]))
-                marker.radius = 4
-                marker.fill_opacity = 0.5
-                marker.fill_color = color
-                marker.stroke = False
 
-                # Add marker on the map
-                m.add_layer(marker)
-                marker.popup = message
-            except: pass
-
-    display(HTML("<span style='background-color:{};font-weight: bold;'> 1830-1859 </span><span style='background-color:{};font-weight: bold;'> 1829 </span><span style='background-color:{};font-weight: bold;'> 1806-1828 </span><span style='background-color:{};font-weight: bold;'> 1805 </span><span style='background-color:{};font-weight: bold;'> 1799-1804 </span><span style='background-color:{};font-weight: bold;'> 1792-1798 </span>".format(colors[0],colors[1], colors[2], colors[3], colors[4], colors[5])))
-    display(m)
-
+    output = widgets.Output()
+    display(btn, output)
+    btn.observe(onchange, 'value')
 
 
