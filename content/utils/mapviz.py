@@ -7,6 +7,7 @@ from ipywidgets import HTML, Output, HBox, Layout
 from ipyleaflet import Map, Marker, Popup, CircleMarker
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
+import gender_guesser.detector
 
 from .nestedlookup import *
 from .search_dynamic import show_webpage,btn_new_search
@@ -22,7 +23,7 @@ def allonmap(data, by: str):
     coordinates = []
     m= Map(
             zoom=1.5,
-            layout=Layout(width='auto'),
+            layout=Layout(width='80%', height='500px'),
             close_popup_on_click=False
             )
     
@@ -73,7 +74,7 @@ def allonmap(data, by: str):
                     radius = 12
                 marker.radius = radius
                 marker.fill_opacity = 0.8
-                marker.fill_color = "#2A7299"
+                marker.fill_color = '#3E81B8'
                 marker.stroke = False
 
                 # Add marker on the map
@@ -151,7 +152,7 @@ def map_by_person():
     output_bydate = widgets.Output()
     display(dropdown, output_bydate)
     dropdown.observe(on_value_change, names='value')
-
+    
 def createhistogramm(data, person):
     """
     Create a histogramm of the exchange of letters
@@ -163,8 +164,8 @@ def createhistogramm(data, person):
     x_coords = [coord[0] for coord in data]
     fig= plt.figure(figsize=(7,2))
     plt.hist(x_coords, bins=30)
-    fig.suptitle(title, fontsize=12)
-    plt.xlabel('Year', fontsize=12)
+    fig.suptitle(title, fontsize=9)
+    plt.xlabel('Year', fontsize=9)
     plt.ylabel('Number of letters', fontsize=12)
     
     return plt.show()
@@ -198,7 +199,11 @@ def byperson():
     dropdown = createDropdown('', people)
     return dropdown 
 
-def histogramm_by_person():
+def histogramm_by_person(all:bool):
+    
+    if all == True:
+        d = byperson()
+    else : d = by_women(women_partner())
     
     def on_value_change(change):
         output_bydate.clear_output(wait=True)
@@ -228,11 +233,10 @@ def histogramm_by_person():
                 HBox([createhistogramm(liste, person), allonmap(results, 'coverage_location')])
             else:
                 allonmap(results, 'coverage_location')
-    dropdown = byperson()
+    dropdown = d
     output_bydate = widgets.Output()
     display(dropdown, output_bydate)
     dropdown.observe(on_value_change, names='value')
-
 
 
 def sorted_by_period(data:list):
@@ -276,6 +280,91 @@ def mapByPeriod():
     display(btn, output)
     btn.observe(onchange, 'value')
     
+
+#### WOMEN ####
+def women_partner():
+    guess = gender_guesser.detector.Detector()
+    data_women = []
+
+    # Letters to AvH
+    for i in data:
+        try :
+            if 'Humboldt' not in i['creator'] and 'Unbekannt' not in i['creator'] and type(i['creator']) != list:
+                firstname = i['creator'].split(' ')[0]
+                gender =guess.get_gender(firstname)
+                if gender == 'unknown':
+                    firstname = i['creator'].split(', ')[1].split(' (')[0]
+                    gender =guess.get_gender(firstname)
+                
+                    if ' ' in firstname :
+                        firstname = firstname.split(' ')[0]
+                    elif '-' in firstname :
+                        firstname = firstname.split('-')[0]
+
+                if firstname == 'Henriette':
+                    gender = 'female'
+                else : 
+                    gender = guess.get_gender(firstname)
+                    
+            if 'female' in gender:
+                data_women.append(i)
+        except: pass
+
+    # Letters by AvH
+    for i in data:
+        try :
+            if 'Humboldt' not in i['subject'] and 'Unbekannt' not in i['subject'] and type(i['subject']) != list:
+                firstname = i['subject'].split(' ')[0]
+                gender = guess.get_gender(firstname)
+                if gender == 'unknown':
+                    firstname = i['subject'].split(', ')[1].split(' (')[0]
+                    gender =guess.get_gender(firstname)
+                    if ' ' in firstname :
+                        firstname = firstname.split(' ')[0]
+                    elif '-' in firstname :
+                        firstname = firstname.split('-')[0]
+
+                    if firstname == 'Henriette':
+                        gender = 'female'
+                    else : 
+                        gender =guess.get_gender(firstname)
+                    
+            if 'female' in gender:
+                data_women.append(i)
+        except: pass
+
+    return data_women
+       
+def by_women(data:dict):
+    """
+    Function that creates a dropdown menu of all persons 
+    who have received and/or sent at least one letter 
+    for which a date is recorded
+    :param data: dict
+    :return: dropdown menu
+    :rtype: widget
+    """
+ 
+    # Get all people who received or sent a letter    
+    creators = avoidTupleInList(nested_lookup('creator', data))
+    subjects = avoidTupleInList(nested_lookup('subject', data))
+    people = []
+    
+    # Delete Humboldt from creators' and subjects' lists
+    for i in creators:
+        if '[' in i :
+            i = i.split(' [vermutlich]')[0]
+        if 'Humboldt' not in i:
+            people.append(i)
+    for i in subjects:
+        if 'Humboldt' not in i and i not in people:
+            people.append(i)
+
+    #Create dropdown Menu
+    dropdown = createDropdown('', people)
+    return dropdown
+  
+      
 ##### old functions ###
 
 
