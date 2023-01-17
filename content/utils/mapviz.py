@@ -288,6 +288,25 @@ def mapByPeriod():
     output = widgets.Output()
     display(btn, output)
     btn.observe(onchange, 'value')
+
+def mapByLocationType():
+    btn = widgets.ToggleButtons(
+                options= {"Show all letters": "coverage_location", "Show all contributors": "contributor_location"},
+                description='',
+                disabled=False,
+                button_style='',
+                )
+
+    def onchange(change):
+        output.clear_output(wait=True)
+        display(Javascript('IPython.notebook.execute_cell()'))
+        with output:
+             display(allonmap(data, change['new']))
+
+
+    output = widgets.Output()
+    display(btn, output)
+    btn.observe(onchange, 'value')
     
 
 #### WOMEN ####
