@@ -28,16 +28,20 @@ def allonmap(data, by: str):
             )
     
     for i in data:
+            try:
+                if i["date"]:
+                        date = i["date"]
+            except : date = "Unknown date."
             try :
                 if i[by]["address"] not in cities:
                     city = i[by]["address"]
                     cities[city] = {}
-                    cities[city]["message"] = "<b>"+ i["date"] + " </b> " + i["title"] + "<br><i>"+ i["contributor"] +"</i> <br> <a href=\""+ i["identifier"][1] + "\" target=\"_blank\">online</a> <hr>"
+                    cities[city]["message"] = "<b>"+ date + " </b> " + i["title"] + "<br><i>"+ i["contributor"] +"</i> <br> <a href=\""+ i["identifier"][1] + "\" target=\"_blank\">online</a> <hr>"
                     cities[city]["coordinates"] = [i[by]["coordinates"][1], i[by]["coordinates"][0]]
                     
                 elif i[by]["address"] in cities:
                     city = i[by]["address"]
-                    cities[city]["message"] = cities[city]["message"] + "<b>"+ i["date"] + " </b> " + i["title"] + "<br><i>"+ i["contributor"]  + "</i><br> <a href=\""+ i["identifier"][1] + "\" target=\"_blank\">online</a> <hr>"
+                    cities[city]["message"] = cities[city]["message"] + "<b>"+ date + " </b> " + i["title"] + "<br><i>"+ i["contributor"] +"</i> <br> <a href=\""+ i["identifier"][1] + "\" target=\"_blank\">online</a> <hr>"
             except : pass
             
     # Coordinates to create a dynamic map boundaries
