@@ -483,3 +483,50 @@ def recordedCoordinatePlot():
     ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
     ax.set_title('Percentage of recorded coordinates in data')
     return plt.show()
+
+# Functions for language plot
+
+def language_data():
+    eng = 0
+    ger = 0
+    fre = 0
+    ita = 0
+    spa = 0
+    other =0
+    more_than_one = 0 
+    #more_than_one_list = []
+    for i in data:
+        try:
+            if "ger" in i["language"]:
+                ger+=1
+            elif "fr" in i["language"]:
+                fre +=1
+            elif "en" in i["language"]:
+                eng +=1
+            elif "it" in i["language"]:
+                ita +=1
+            elif "sp" in i["language"]:
+                spa +=1
+            else:
+                other +=1
+                
+            if type(i["language"])==list:
+                more_than_one +=1
+                
+            
+        except: pass
+    return [[eng, ger, fre, ita, spa, other], more_than_one]
+
+def languagePlot():
+ 
+    fig, ax = plt.subplots()
+    plt.rcParams.update({'font.size': 6})
+    explode = (0.2, 0.1, 0.1, 0.4, 0.35, 0.25)
+    ax.pie(language_data()[0],
+       explode=explode,
+       labels=["English", "German", "French", "Italian", "Spanish", "Other"] ,
+        autopct='%1.1f%%',
+       startangle=10)
+    ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
+    ax.set_title('In what languages are the letters written?')
+    return plt.show()
