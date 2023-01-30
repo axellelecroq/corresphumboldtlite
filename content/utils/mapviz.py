@@ -453,3 +453,33 @@ def age_distribution() :
     plt.ylabel('Age of the correspondence partner', fontsize=12)
     plt.colorbar()
     von_plt = plt.show()
+
+
+# Represented data with recorded coordinates
+
+def represented_data():
+    both = 0
+    contributor = 0
+    for i in data:
+        try:
+            if i["coverage_location"] and i["contributor_location"]:
+                both+=1
+            elif i["contributor_location"]:
+                contributor +=1
+            
+        except: pass
+    no_represented= len(data) -(both+contributor)
+    return [both, contributor, no_represented]
+
+def recordedCoordinatePlot():
+    fig, ax = plt.subplots()
+    #plt.rcParams.update({'font.size': 6})
+    explode = (0.1, 0.2, 0.1)
+    ax.pie(represented_data(),
+       explode=explode,
+       labels=["Contributor's and coverage's coord.", "Only contributor's coord.", "No recorded coordinate"] ,
+        autopct='%1.1f%%',
+       startangle=10)
+    ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
+    ax.set_title('Percentage of recorded coordinates in data')
+    return plt.show()
