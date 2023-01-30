@@ -473,7 +473,7 @@ def represented_data():
 
 def recordedCoordinatePlot():
     fig, ax = plt.subplots()
-    #plt.rcParams.update({'font.size': 6})
+    plt.rcParams.update({'font.size': 6})
     explode = (0.1, 0.2, 0.1)
     ax.pie(represented_data(),
        explode=explode,
