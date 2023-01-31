@@ -8,6 +8,7 @@ from ipyleaflet import Map, Marker, Popup, CircleMarker
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import gender_guesser.detector
+from collections import Counter
 
 from .nestedlookup import *
 from .search_dynamic import show_webpage,btn_new_search
@@ -529,4 +530,30 @@ def languagePlot():
        startangle=10)
     ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
     ax.set_title('In what languages are the letters written?')
+    return plt.show()
+
+
+# Contributor Plot
+def contributorPlot():
+    institutions = Counter(nested_lookup('contributor', data))
+    filtered= {"others":0}
+
+    for i in institutions:
+        if institutions[i] > 100:
+            filtered[i] = institutions[i]
+        elif "France" in i:
+            filtered["Bibliothèque nationale de France"] = institutions[i]
+        elif institutions[i] <100:
+            filtered["others"] += int(institutions[i])
+    
+    fig, ax = plt.subplots()
+    plt.rcParams.update({'font.size': 6})
+    #explode = (0.1, 0.1, 0.1, 0, 0.1, 0.1,0.1, 0.1)
+    ax.pie(filtered.values(),
+       #explode=explode,
+       labels=filtered.keys(),
+        autopct='%1.1f%%',
+       startangle=40)
+    ax.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
+    ax.set_title('Where are most of the letters kept?')
     return plt.show()
