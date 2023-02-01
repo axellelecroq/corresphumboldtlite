@@ -18,7 +18,7 @@ def getJSON(path):
     :return: data
     :rtype: dict
     """
-    with open(path, encoding="iso-8859-15" ) as data_file:
+    with open(path, encoding="utf-8" ) as data_file:
        data = json.load(data_file)
     return data;
 
