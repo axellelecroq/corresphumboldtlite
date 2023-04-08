@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 import numpy
 import random
 import IPython
@@ -17,6 +18,33 @@ from .widgets import createDropdown, createButton, createCheckBox
 
 data = getJSON('data/records.json')
 out = Output()
+
+def writeJSON(file, data):
+    """
+    Store JSON data in a JSON file 
+    :param file: str
+    :param data: dict
+    """
+    with open(file, mode='w') as f:
+        json.dump(data, f)
+
+def download_data(data):
+    """
+    Download searched data
+    :return: btn
+    :rtype: button
+    """
+    # Create the button
+    btn = createButton('Download data', 'info')
+    output = widgets.Output()
+
+    def new_search(b):
+        writeJSON('./downloaded/results.json', data)
+    
+    # When the button is clicked, then the output of the jupyter
+    # cell will be clean.
+    btn.on_click(new_search)
+    return btn
 
 def allonmap(data, by: str):
     cities = {}
@@ -86,7 +114,7 @@ def allonmap(data, by: str):
                 m.add_layer(marker)
                 marker.popup = message
             except: pass
-    display(m)
+    return display(download_data(data), m)
     
 
 def map_by_date():
